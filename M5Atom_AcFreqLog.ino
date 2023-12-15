@@ -2,7 +2,7 @@
  * ラジオペンチ　さんのAmbientに書き込むものを自分仕様に改造
  * ・AmbientからInfluxDBに変更
  * ・UDPで投げる
- * ・WiFiManagerを入れる
+ * ・WiFiManager
 */
 
 // ESP32で商用電源周波数をAmbientに書き込み File:20210303AcFreqLogToAmbient.ino
@@ -12,6 +12,7 @@
 #include "M5Atom.h"
 #include <WiFi.h>
 #include <WiFiUdp.h>
+#include <WiFiManager.h> // https://github.com/tzapu/WiFiManager
 
 #define AC_pin       32          // AC信号入力ピン
 #define AC_FREQ      50          // 電源公称周波数（50 or 60)
@@ -68,15 +69,19 @@ void setup() {
   pinMode(AC_pin, INPUT);                  // 電源交流信号入力ピン
   analogSetAttenuation(ADC_2_5db);         // フルスケール1.4V = 4096
 // analogSetAttenuation(ADC_0db);         // 1.04v
-pinMode(vAnalogPin, ANALOG);
+  pinMode(vAnalogPin, ANALOG);
 
-  WiFi.begin(ssid, password);              //  Wi-Fi APに接続
-  while (WiFi.status() != WL_CONNECTED) {  //  Wi-Fi AP接続待ち
-    delay(100);
+  WiFi.mode(WIFI_STA);
+  WiFiManager wm;
+  bool res;
+  res=wm.autoConnect("M5Stick-C_CO2_Speaker","");
+  if(!res) {
+    delay(3000);
+    //ESP.restart();
+    delay(5000);
+  } else{
+    Serial.println(WiFi.localIP());
   }
-
-  Serial.print("WiFi connected\r\nIP address: ");
-  Serial.println(WiFi.localIP());              // IPアドレス表示
   attachInterrupt(AC_pin, acIrq, FALLING);
     for(int i=0; i<17; i=i+8) {
     chipId |= ((ESP.getEfuseMac() >> (40 - i)) & 0xff) << i;
